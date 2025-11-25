@@ -25,6 +25,9 @@ app.use(morgan("dev"));
 
 app.use(express.json());
 
+// Limitar todos los endpoints de la aplicación
+// app.use(limiter)
+
 app.use("/api/budgets", budgetRouter);
 app.use("/api/auth", authRouter);
 
