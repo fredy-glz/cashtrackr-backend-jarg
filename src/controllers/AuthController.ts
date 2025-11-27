@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+
 import User from "../models/User";
 import { checkPassword, hashPassword } from "../utils/auht";
 import { generateToken } from "../utils/token";
@@ -90,5 +91,76 @@ export class AuthController {
       // console.log(error)
       res.status(500).json({ error: "Hubo un error" });
     }
+  };
+
+  static forgotPassword = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      // Verificar si el usuario existe
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        const error = new Error("Usuario no encontrado");
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      user.token = generateToken();
+      await user.save();
+      await AuthEmail.sendPasswordResetToken({
+        name: user.name,
+        email: user.email,
+        token: user.token,
+      });
+
+      res.json("Revisa tu email para instrucciones");
+    } catch (error) {
+      // console.log(error)
+      res.status(500).json({ error: "Hubo un error" });
+    }
+  };
+
+  static validateToken = async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      const tokenExists = await User.findOne({ where: { token } });
+      if (!tokenExists) {
+        const error = new Error("Token no válido");
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      res.json("Token válido...");
+    } catch (error) {
+      // console.log(error)
+      res.status(500).json({ error: "Hubo un error" });
+    }
+  };
+
+  static resetPasswordWithToken = async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.body;
+
+      const user = await User.findOne({ where: { token } });
+      if (!user) {
+        const error = new Error("Token no válido");
+        res.status(404).json({ error: error.message });
+        return;
+      }
+
+      // Asignar el nuevo password
+      user.password = await hashPassword(password);
+      user.token = null;
+      await user.save();
+
+      res.json("La contraseña se modificó correctamente");
+    } catch (error) {
+      // console.log(error)
+      res.status(500).json({ error: "Hubo un error" });
+    }
+  };
+
+  static user = async (req: Request, res: Response) => {
+    res.json(req.user);
   };
 }
