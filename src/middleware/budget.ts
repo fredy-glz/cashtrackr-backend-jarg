@@ -73,3 +73,13 @@ export const validateBudgetInput = async (
 
   next();
 };
+
+export const hasAccess = (req: Request, res: Response, next: NextFunction) => {
+  if (req.budget.userId !== req.user.id) {
+    const error = new Error("Acción no válida");
+    res.status(401).json({ error: error.message });
+    return;
+  }
+
+  next();
+};

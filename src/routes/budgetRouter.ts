@@ -3,6 +3,7 @@ import { Router } from "express";
 import { BudgetController } from "../controllers/BudgetController";
 import { handleInputErrors } from "../middleware/validation";
 import {
+  hasAccess,
   validateBudgeExists,
   validateBudgeId,
   validateBudgetInput,
@@ -13,12 +14,16 @@ import {
   validateExpenseId,
   validateExpenseInput,
 } from "../middleware/expense";
+import { authenticate } from "../middleware/auth";
 
 const router = Router();
+
+router.use(authenticate);
 
 // Middleware para validar el id que se pasa como parametro en cada endpoint
 router.param("budgetId", validateBudgeId);
 router.param("budgetId", validateBudgeExists);
+router.param("budgetId", hasAccess);
 
 router.param("expenseId", validateExpenseId);
 router.param("expenseId", validateExpenseExists);
