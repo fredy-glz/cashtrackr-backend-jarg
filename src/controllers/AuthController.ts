@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import e, { Request, Response } from "express";
 
 import User from "../models/User";
 import { checkPassword, hashPassword } from "../utils/auht";
@@ -162,5 +162,54 @@ export class AuthController {
 
   static user = async (req: Request, res: Response) => {
     res.json(req.user);
+  };
+
+  static updateCurrentUserPassword = async (req: Request, res: Response) => {
+    try {
+      const { current_password, password } = req.body;
+
+      const { id } = req.user;
+      const user = await User.findByPk(id);
+
+      // Validar si la contraseña actual es correcta
+      const isPasswordCorrect = await checkPassword(
+        current_password,
+        user.password
+      );
+      if (!isPasswordCorrect) {
+        const error = new Error("La contraseña actual es incorrecta");
+        res.status(401).json({ error: error.message });
+        return;
+      }
+
+      // Hashear y guardar password
+      user.password = await hashPassword(password);
+      await user.save();
+
+      res.json("La contraseña se modifico correctamente");
+    } catch (error) {
+      // console.log(error);
+      res.status(500).json({ error: "Hubo un error" });
+    }
+  };
+
+  static checkPassword = async (req: Request, res: Response) => {
+    try {
+      const { password } = req.body;
+      const { id } = req.user;
+      const user = await User.findByPk(id);
+
+      const isPasswordCorrect = await checkPassword(password, user.password);
+      if (!isPasswordCorrect) {
+        const error = new Error("La contraseña es incorrecta");
+        res.status(401).json({ error: error.message });
+        return;
+      }
+
+      res.json("Contraseña correcta");
+    } catch (error) {
+      console.log(error);
+      res.status(500).json("Hubo un error");
+    }
   };
 }
